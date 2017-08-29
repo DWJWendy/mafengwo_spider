@@ -18,6 +18,9 @@ class TravelreviewItem(scrapy.Item):
     content = scrapy.Field()  # 评论内容
     user_name = scrapy.Field()  # 用户名
     time = scrapy.Field()  # 评论时间
+    image_urls = scrapy.Field() #评论照片url
+    image_urlb = scrapy.Field() #评论照片url
+    image_id = scrapy.Field() #评论对应图片
 
 class TravelCrawlItem(scrapy.Item):
     # 定义爬取的景点评论
