@@ -11,7 +11,7 @@ from items import TravelnoteItem,TravelhotelItem,TravelfoodItem,TravelCrawlItem
 class MongoDBPipleline(object):
     def __init__(self):
         clinet = pymongo.MongoClient("localhost", 27017)
-        db = clinet["mafengwo"]
+        db = clinet["mfw_pic"]
         self.spot_review = db["spot_review"]
         self.note = db["note"]
         self.food_review = db["food_review"]
