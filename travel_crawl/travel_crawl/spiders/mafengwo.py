@@ -1,32 +1,32 @@
 # -*- encoding:utf-8 -*-
 
-import scrapy,requests,json,math,time
+import scrapy,requests,json,math,time,os,urllib
 from bs4 import BeautifulSoup
 from travel_crawl.items import TravelCrawlItem,TravelnoteItem,TravelhotelItem,TravelfoodItem,TravelreviewItem
 
 class Data_Crawl(scrapy.Spider):
     name = 'mafengwo'  #-爬虫名：一爬虫对应一名字
     allowed_domains = ['www.mafengwo.cn']  #爬取网址域名
-    start_urls = ["成都","重庆","西安"]  #-输入爬取的目的地或者关键字
+    start_urls = ["成都","重庆","西安","厦门","上海","北京","青海","新疆","苏州","长沙","天津","大连","丽江","大理","昆明"]  #-输入爬取的目的地或者关键字
 
     host = "http://www.mafengwo.cn/search/s.php?q="
 
     def start_requests(self):
-        page_num = 1  #-*- 网页中设置呈现页面最多为50页 -*-
+        page_num =50 #-*- 网页中设置呈现页面最多为50页 -*-
         for i in range(len(self.start_urls)):
             for j in range(1, page_num+1):
                 # -*-景点-*-
                 yield scrapy.Request(self.host + self.start_urls[i] + "&p=" + str(j) + "&t=poi&kt=1",
                               meta={"type": 0, "location": self.start_urls[i]}, callback=self.parse_info)
-                #- * -游记-*-
-                yield scrapy.Request(self.host + self.start_urls[i] + "&p=" + str(j) + "&t=info&kt=1",
-                              meta={"type": 1, "location": self.start_urls[i]}, callback=self.parse_info)
-                #-*-美食-*-
-                yield scrapy.Request(self.host + self.start_urls[i] + "&p=" + str(j) + "&t=cate&kt=1",
-                               meta={"type": 2, "location": self.start_urls[i]}, callback=self.parse_info)
-                #-*-酒店-*-
-                yield scrapy.Request(self.host + self.start_urls[i] + "&p=" + str(j) + "&t=hotel&kt=1",
-                               meta={"type": 3, "location": self.start_urls[i]}, callback=self.parse_info)
+                # #- * -游记-*-
+                # yield scrapy.Request(self.host + self.start_urls[i] + "&p=" + str(j) + "&t=info&kt=1",
+                #               meta={"type": 1, "location": self.start_urls[i]}, callback=self.parse_info)
+                # #-*-美食-*-
+                # yield scrapy.Request(self.host + self.start_urls[i] + "&p=" + str(j) + "&t=cate&kt=1",
+                #                meta={"type": 2, "location": self.start_urls[i]}, callback=self.parse_info)
+                # #-*-酒店-*-
+                # yield scrapy.Request(self.host + self.start_urls[i] + "&p=" + str(j) + "&t=hotel&kt=1",
+                #                meta={"type": 3, "location": self.start_urls[i]}, callback=self.parse_info)
 
     def parse_info(self, response):
          ids = response.xpath('//div[@class="ct-text "]/h3/a/@href').re(r'\d+')
@@ -113,9 +113,27 @@ class Data_Crawl(scrapy.Spider):
                         review_item["star"] = int(
                             tmp[i].find("span", attrs={"class": "s-star"}).get("class")[1].replace("s-star", ""))
                         review_item["user_name"] = tmp[i].find("a", attrs={"class": "name"}).get_text()
-                        review_item["content"] = tmp[i].find("p", attrs={"class": "rev-txt"}).get_text()
-                        review_item["time"] = tmp[i].find("span", attrs={"class": "time"}).get_text()
-                        data_item['review'].append(review_item)
+
+                        # 爬取图片地址
+                        try:
+                            review_item["image_urls"] = [item.img.get("src") for item in tmp[i].find("div", attrs={"class": "rev-img"}).find_all("a")]
+                            review_item["image_urlb"] = ["http://www.mafengwo.cn"+item.get("href") for item in tmp[i].find("div", attrs={"class": "rev-img"}).find_all("a")]
+                            review_item["image_id"] =  [item.get("href").replace("/photo/poi/","").replace(".html","") for item in tmp[i].find("div", attrs={"class": "rev-img"}).find_all("a")]
+                        except:
+                            review_item["image_urls"] =[]
+                            review_item["image_urlb"] =[]
+                        #-*-图片爬取
+                        if len(review_item["image_urls"])!=0:
+                            filepath1 = 'travel_crawl/img'
+                            print u'准备爬取图片...'
+                            if os.path.exists(filepath1) is False:
+                                os.mkdir(filepath1)
+                            for j in range(len(review_item["image_urls"])):
+                                temp1 = filepath1 + '/%s.jpg' % review_item["image_id"][j]
+                                urllib.urlretrieve(review_item["image_urls"][j],temp1)
+                    review_item["content"] = tmp[i].find("p", attrs={"class": "rev-txt"}).get_text()
+                    review_item["time"] = tmp[i].find("span", attrs={"class": "time"}).get_text()
+                    data_item['review'].append(review_item)
                 time.sleep(5)
             yield data_item
         #-*-美食-*-
@@ -147,7 +165,7 @@ class Data_Crawl(scrapy.Spider):
                         data_item['review'].append(review_item)
                 time.sleep(5)
             yield data_item
-        # -*-美食-*-
+        # -*-酒店-*-
         if type == 3:
             url = "http://www.mafengwo.cn/hotel/info/comment_list?poi_id="+data_item["hotel_id"]+"&page=1"
             try:
@@ -214,6 +232,7 @@ class Data_Crawl(scrapy.Spider):
         else:
             note_item["day"] = ""
         yield note_item
+
 
 
 
