@@ -3,6 +3,7 @@
 import scrapy,requests,json,math,time,os,urllib
 from bs4 import BeautifulSoup
 from travel_crawl.items import TravelCrawlItem,TravelnoteItem,TravelhotelItem,TravelfoodItem,TravelreviewItem
+import socket  
 
 class Data_Crawl(scrapy.Spider):
     name = 'mafengwo'  #-爬虫名：一爬虫对应一名字
@@ -124,13 +125,18 @@ class Data_Crawl(scrapy.Spider):
                             review_item["image_urlb"] =[]
                         #-*-图片爬取
                         if len(review_item["image_urls"])!=0:
-                            filepath1 = 'travel_crawl/img'
-                            print u'准备爬取图片...'
-                            if os.path.exists(filepath1) is False:
-                                os.mkdir(filepath1)
-                            for j in range(len(review_item["image_urls"])):
-                                temp1 = filepath1 + '/%s.jpg' % review_item["image_id"][j]
-                                urllib.urlretrieve(review_item["image_urls"][j],temp1)
+                            try:
+                                filepath1 = 'travel_crawl/img'
+                                print u'准备爬取图片...'
+                                if os.path.exists(filepath1) is False:
+                                    os.mkdir(filepath1)
+                                for j in range(len(review_item["image_urls"])):
+                                    temp1 = filepath1 + '/%s.jpg' % review_item["image_id"][j]
+                                    socket.setdefaulttimeout(20)
+                                    urllib.urlretrieve(review_item["image_urls"][j],temp1)
+                            except Exception as e:
+                                print u'爬取错误'+str(e)
+                                pass
                     review_item["content"] = tmp[i].find("p", attrs={"class": "rev-txt"}).get_text()
                     review_item["time"] = tmp[i].find("span", attrs={"class": "time"}).get_text()
                     data_item['review'].append(review_item)
