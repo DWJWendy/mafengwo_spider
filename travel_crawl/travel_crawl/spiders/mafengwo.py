@@ -6,7 +6,7 @@ from travel_crawl.items import TravelCrawlItem,TravelnoteItem,TravelhotelItem,Tr
 
 class Data_Crawl(scrapy.Spider):
     name = 'mafengwo'  #-爬虫名：一爬虫对应一名字
-    allowed_domains = ['www.mafengwo.cn']  #爬取网址域名
+    allowed_domains = ['www.mafengwo.cn'，'pagelet.mafengwo.cn']  #爬取网址域名
     start_urls = ["成都","重庆","西安","厦门","上海","北京","青海","新疆","苏州","长沙","天津","大连","丽江","大理","昆明"]  #-输入爬取的目的地或者关键字
 
     host = "http://www.mafengwo.cn/search/s.php?q="
@@ -50,7 +50,7 @@ class Data_Crawl(scrapy.Spider):
                 item["info"] = BeautifulSoup(infos[i], "html5lib").get_text().replace("\n", "").replace(" ", "")
                 item["attraction_id"] = ids[i]
                 item["attraction"] = names[i]
-                yield scrapy.Request(url="http://www.mafengwo.cn/poi/__pagelet__/pagelet/poiCommentListApi?params=%7B%22poi_id%22%3A%22"+ids[i]+"%22%2C%22page%22%3A1%2C%22just_comment%22%3A1%7D",meta={"type": type, "item": item}, callback=self.parse_review)
+                yield scrapy.Request(url="http://pagelet.mafengwo.cn//poi/pagelet/poiCommentListApi?params=%7B%22poi_id%22%3A%22"+ids[i]+"%22%2C%22page%22%3A1%2C%22just_comment%22%3A1%7D",meta={"type": type, "item": item}, callback=self.parse_review)
          # -*- 游记-*-
          elif type == 1:
              for i in range(len(ids)):
@@ -94,7 +94,7 @@ class Data_Crawl(scrapy.Spider):
             except:
                 total_page = 1
             for page in range(1,total_page+1):
-                url = "http://www.mafengwo.cn/poi/__pagelet__/pagelet/poiCommentListApi?params={\"poi_id\":\"%s\",\"page\":%s,\"just_comment\":1}"
+                url = "http://pagelet.mafengwo.cn//poi/pagelet/poiCommentListApi?params={\"poi_id\":\"%s\",\"page\":%s,\"just_comment\":1}"
                 soup = json.loads(requests.get(url%(data_item["attraction_id"], str(page))).text)["data"]["html"]
                 soup = BeautifulSoup('<html><head></head><body>' +soup + '</body></html>', 'lxml')
                 tmp = soup.find_all("li", attrs={"class": "rev-item comment-item clearfix"})
